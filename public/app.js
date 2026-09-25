@@ -52,7 +52,7 @@ $("#owner-toggle").onclick=()=>{
  $("#password-label").textContent=ownerMode?"オーナーパスワード":"合言葉";
  $("#password").type=ownerMode?"password":"text";$("#password").value="";
  $("#password").placeholder=ownerMode?"オーナー専用パスワード":"合言葉（かな入力OK）";
- $("#login-help").textContent=ownerMode?"初期設定で登録したオーナーパスワードを入力してください。":"オーナーから教わった合言葉で入園できます。";
+ $("#login-help").textContent=ownerMode?"初期設定で登録したオーナーパスワードを入力してください。":"合言葉を入力してください。";
  $("#login-error").textContent="";
 };
 function handleForm(selector,errorSelector,fn){
