@@ -36,3 +36,10 @@ body:has(#gate:not([hidden])) main{max-width:none;min-height:100vh;min-height:10
 #detail-actions{position:sticky;bottom:-30px;background:var(--paper);padding-bottom:12px}
 @media(max-width:700px){.cards{grid-template-columns:1fr}.note-open h3{font-size:20px}}
 
+
+.status-filters{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}
+.status-filter{border:1px solid var(--status-line,#b44754);font-weight:700;padding:10px 20px;color:var(--status-ink,#803541);background:white}
+.status-filter:hover{background:var(--status-bg,#fce7e7)}
+.status-filter[aria-pressed="true"]{background:var(--status-bg,#fce7e7);box-shadow:0 0 0 2px var(--status-line,#b44754);color:var(--status-ink,#803541)}
+@media(max-width:600px){.status-filters{gap:9px}.status-filter{padding:8px 13px}}
+

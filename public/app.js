@@ -1,6 +1,8 @@
 const $=s=>document.querySelector(s);
 let token=sessionStorage.getItem("oni-park-session")||"";
-let role="",ownerMode=false,items=[],selected=null,editing=null;
+let role="",ownerMode=false,items=[],selected=null,editing=null,activeStatus="";
+const genres=["金ロー","新作映画","ゲーム","アニメ","オリジナルホラー","その他"];
+const genreOf = value => genres.includes(value)?value:"その他";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function notice(text){$("#notice").textContent=text;$("#notice").hidden=false;setTimeout(()=>$("#notice").hidden=true,4500);}
 function locked(){token="";sessionStorage.removeItem("oni-park-session");role="";items=[];$("#cards").replaceChildren();$("#detail-content").replaceChildren();$("#park").hidden=true;$("#account").hidden=true;$("#gate").hidden=false;document.querySelectorAll("dialog[open]").forEach(d=>d.close());}
@@ -21,30 +23,28 @@ async function enter(){
 }
 async function refresh(){
  items=(await api("/ideas")).items;
- const previous=$("#theme").value;
- $("#theme").innerHTML='<option value="">すべての題材</option>'+[...new Set(items.map(x=>x.theme).filter(Boolean))].sort().map(t=>'<option>'+esc(t)+'</option>').join("");
- $("#theme").value=previous;render();
+ render();
 }
 const statusClass = s => ({"アイデア":"idea","検討中":"review","制作中":"production","撮影済み":"done"}[s]||"idea");
 function render(){
- const q=$("#search").value.toLocaleLowerCase(),status=$("#status").value,theme=$("#theme").value;
- const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||x.theme===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.mission,x.highlight].join(" ").toLocaleLowerCase().includes(q));
+ const q=$("#search").value.toLocaleLowerCase(),status=activeStatus,theme=$("#theme").value;
+ const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.mission,x.highlight].join(" ").toLocaleLowerCase().includes(q));
  $("#count").textContent=filtered.length+" 件";
  $("#empty").hidden=filtered.length!==0;
  $("#empty h2").textContent=items.length?"条件に合う企画がありません":"ここから、企画を育てよう。";
  $("#empty p").textContent=items.length?"キーワードや絞り込みを変えてみてください。":"「企画を投稿」から自分の案や、提案してもらった案を残せます。";
- $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(x.theme||"オリジナル")+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">ミッション</span><p>'+esc(x.mission)+'</p></button><div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
+ $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(genreOf(x.theme))+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">ミッション</span><p>'+esc(x.mission)+'</p></button><div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
 }
 function showDetail(id){
  selected=items.find(x=>x.id===id);if(!selected)return;
- $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(selected.theme||"オリジナル")+'</p>'+[["stage","舞台・マップ"],["monster","鬼の特徴"],["mission","ミッション"],["victory","勝利・終了条件"],["highlight","見どころ・制作メモ"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>').join("");
+ $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(genreOf(selected.theme))+'</p>'+[["stage","舞台・マップ"],["monster","鬼の特徴"],["mission","ミッション"],["victory","勝利・終了条件"],["highlight","見どころ・制作メモ"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>').join("");
  $("#detail-actions").hidden=false;$("#detail").showModal();
 }
 function openEditor(item=null){
  editing=item?.id||null;$("#idea-form").reset();$("#editor-error").textContent="";
  $("#editor-title").textContent=item?"企画を編集":"新しい企画";
  $("#edit-status").hidden=false;
- if(item)for(const el of $("#idea-form").elements)if(el.name&&item[el.name]!==undefined)el.value=item[el.name];
+ if(item)for(const el of $("#idea-form").elements)if(el.name&&item[el.name]!==undefined)el.value=el.name==="theme"?genreOf(item.theme):item[el.name];
  $("#editor").showModal();
 }
 $("#owner-toggle").onclick=()=>{
@@ -85,5 +85,6 @@ $("#delete").onclick=async()=>{
  try{await api("/ideas/"+selected.id,"DELETE");$("#detail").close();await refresh();notice("企画を削除しました。");}catch(e){notice(e.message);}
 };
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
-for(const id of ["search","status","theme"])$("#"+id).addEventListener(id==="search"?"input":"change",render);
+$("#status-filters").onclick=e=>{const button=e.target.closest("[data-status]");if(!button)return;activeStatus=button.dataset.status;document.querySelectorAll("[data-status]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));render();};
+for(const id of ["search","theme"])$("#"+id).addEventListener(id==="search"?"input":"change",render);
 enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
