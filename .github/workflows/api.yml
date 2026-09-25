@@ -1,5 +1,8 @@
 name: 鬼パーク 認証・投稿サーバー公開
 on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'migrations/**', 'wrangler.jsonc', 'package.json', '.github/workflows/api.yml']
   workflow_dispatch:
 permissions:
   contents: read

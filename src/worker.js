@@ -45,7 +45,7 @@ async function api(request,env,path) {
  if(!["GET","HEAD"].includes(request.method)&&request.headers.get("origin")!==env.ALLOWED_ORIGIN)fail("この操作は許可されていません。",403);
  if(path==="/api/login"&&request.method==="POST"){
   const body=await bodyOf(request);
-  if(typeof body.password!=="string"||body.password.length>200)fail("合言葉を確認してください。");
+  if(typeof body.password!=="string"||!body.password.length)fail("合言葉を確認してください。");
   const role=body.role==="owner"?"owner":"member",now=Date.now();
   const key=await digest((request.headers.get("CF-Connecting-IP")||"local")+":"+role);
   await env.DB.prepare("DELETE FROM attempts WHERE expires<?").bind(now).run();
@@ -79,7 +79,7 @@ async function api(request,env,path) {
  if(path==="/api/passphrase"&&request.method==="POST"){
   if(s.role!=="owner")fail("オーナーだけが変更できます。",403);
   const b=await bodyOf(request);
-  if(typeof b.password!=="string"||normalize(b.password).length<8||b.password.length>200)fail("合言葉は8〜200文字で設定してください。");
+  if(typeof b.password!=="string"||!b.password.length)fail("合言葉を入力してください。");
   if(equal(await digest(normalize(b.password)),await digest(normalize(env.OWNER_PASSWORD))))fail("オーナーパスワードとは別の合言葉を設定してください。");
   const salt=random(),hash=await derive(b.password,salt);
   await env.DB.batch([
