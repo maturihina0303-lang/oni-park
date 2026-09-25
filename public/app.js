@@ -25,7 +25,7 @@ async function refresh(){
  items=(await api("/ideas")).items;
  render();
 }
-const statusClass = s => ({"アイデア":"idea","検討中":"review","制作中":"production","撮影済み":"done"}[s]||"idea");
+const statusClass = s => ({"アイデア":"idea","検討中":"review","制作中":"production","マップ制作中":"map","モデル制作中":"model","撮影済み":"done"}[s]||"idea");
 function render(){
  const q=$("#search").value.toLocaleLowerCase(),status=activeStatus,theme=$("#theme").value;
  const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.mission,x.victory,x.highlight].join(" ").toLocaleLowerCase().includes(q));

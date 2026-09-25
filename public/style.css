@@ -58,3 +58,7 @@ dialog .dialog-head{position:sticky;top:calc(-1 * var(--dialog-padding));z-index
 dialog .dialog-head button{flex-shrink:0;min-width:44px;min-height:44px;display:grid;place-items:center}
 @media(max-width:600px){dialog{--dialog-padding:22px}}
 
+
+.status-map{--status-bg:#d9f2f2;--status-ink:#23666a;--status-line:#6eb9bb}
+.status-model{--status-bg:#ffe6cf;--status-ink:#884c19;--status-line:#daa36e}
+

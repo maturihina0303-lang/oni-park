@@ -10,7 +10,7 @@ export async function derive(s,salt) {
 export function equal(a,b) { if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0; }
 function response(data,status=200,headers={}) { return Response.json(data,{status,headers:{"Cache-Control":"no-store",...headers}}); }
 function fail(message,status=400) { throw Object.assign(new Error(message),{status}); }
-const statuses=["アイデア","検討中","制作中","撮影済み"];
+const statuses=["アイデア","検討中","制作中","マップ制作中","モデル制作中","撮影済み"];
 export function validateIdea(body) {
  const limits={title:100,author:40,theme:40,stage:1000,monster:2000,mission:3000,victory:1000,highlight:6000};
  const item={};
