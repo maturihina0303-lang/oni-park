@@ -13,3 +13,26 @@ body:has(#gate:not([hidden])) main{max-width:none;min-height:100vh;min-height:10
 #login-help{font-size:13px;margin:0 0 24px}
 @media(max-width:600px){#login{padding:26px 22px}}
 
+
+/* Readable progress notes */
+.status-idea{--status-bg:#fff0bd;--status-ink:#705000;--status-line:#e5be4a}
+.status-review{--status-bg:#eae2ff;--status-ink:#614398;--status-line:#af91de}
+.status-production{--status-bg:#dceeff;--status-ink:#245f8e;--status-line:#76afd6}
+.status-done{--status-bg:#dff2e4;--status-ink:#286440;--status-line:#81b894}
+.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.note-card{background:#fff;border:1px solid var(--line);border-top:5px solid var(--status-line);border-radius:16px;overflow:hidden;box-shadow:0 4px 18px #482d3107;display:flex;flex-direction:column;min-width:0}
+.note-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px 0}
+.tag{display:inline-block;background:var(--status-bg,#fff0bd);color:var(--status-ink,#705000);font-size:13px;font-weight:700;padding:4px 12px}
+.note-theme{font-size:12px;color:#705b60;overflow-wrap:anywhere}
+.note-open{padding:14px 22px 20px;text-align:left;border:0;border-radius:0;background:transparent;flex:1;width:100%}
+.note-open:hover{background:#fffaf7}
+.note-open h3{font-size:22px;line-height:1.5;margin:0 0 18px;overflow-wrap:anywhere}
+.note-label{font-size:12px;font-weight:700;color:#79555c}
+.note-open p{font-size:15px;line-height:1.85;margin:6px 0 0;color:#493c40;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.note-meta{display:flex;justify-content:space-between;gap:12px;padding:0 22px 16px;font-size:12px;color:#77666a}
+.note-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 22px;background:#fffaf8;border-top:1px solid var(--line)}
+.note-actions button{font-size:13px;padding:6px 13px}.note-actions button:first-child{margin-right:auto}
+#detail-content p{font-size:16px;line-height:1.9}#detail-content h3{padding:8px 12px;background:#f9ece9;border-radius:7px}
+#detail-actions{position:sticky;bottom:-30px;background:var(--paper);padding-bottom:12px}
+@media(max-width:700px){.cards{grid-template-columns:1fr}.note-open h3{font-size:20px}}
+

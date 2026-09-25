@@ -25,6 +25,7 @@ async function refresh(){
  $("#theme").innerHTML='<option value="">すべての題材</option>'+[...new Set(items.map(x=>x.theme).filter(Boolean))].sort().map(t=>'<option>'+esc(t)+'</option>').join("");
  $("#theme").value=previous;render();
 }
+const statusClass = s => ({"アイデア":"idea","検討中":"review","制作中":"production","撮影済み":"done"}[s]||"idea");
 function render(){
  const q=$("#search").value.toLocaleLowerCase(),status=$("#status").value,theme=$("#theme").value;
  const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||x.theme===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.mission,x.highlight].join(" ").toLocaleLowerCase().includes(q));
@@ -32,17 +33,17 @@ function render(){
  $("#empty").hidden=filtered.length!==0;
  $("#empty h2").textContent=items.length?"条件に合う企画がありません":"ここから、企画を育てよう。";
  $("#empty p").textContent=items.length?"キーワードや絞り込みを変えてみてください。":"「企画を投稿」から自分の案や、提案してもらった案を残せます。";
- $("#cards").innerHTML=filtered.map(x=>'<button class="card" data-id="'+x.id+'"><div class="card-art"><span class="card-symbol" aria-hidden="true">✳</span><span class="tag">'+esc(x.status)+'</span></div><div class="card-body"><span class="eyebrow">'+esc(x.theme||"オリジナル")+'</span><h3>'+esc(x.title)+'</h3><p>'+esc(x.mission)+'</p></div><div class="card-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div></button>').join("");
+ $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(x.theme||"オリジナル")+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">ミッション</span><p>'+esc(x.mission)+'</p></button><div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
 }
 function showDetail(id){
  selected=items.find(x=>x.id===id);if(!selected)return;
- $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="pill">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(selected.theme||"オリジナル")+'</p>'+[["stage","舞台・マップ"],["monster","鬼の特徴"],["mission","ミッション"],["victory","勝利・終了条件"],["highlight","見どころ・制作メモ"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>').join("");
- $("#detail-actions").hidden=role!=="owner";$("#detail").showModal();
+ $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(selected.theme||"オリジナル")+'</p>'+[["stage","舞台・マップ"],["monster","鬼の特徴"],["mission","ミッション"],["victory","勝利・終了条件"],["highlight","見どころ・制作メモ"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>').join("");
+ $("#detail-actions").hidden=false;$("#detail").showModal();
 }
 function openEditor(item=null){
  editing=item?.id||null;$("#idea-form").reset();$("#editor-error").textContent="";
  $("#editor-title").textContent=item?"企画を編集":"新しい企画";
- $("#edit-status").hidden=role!=="owner";
+ $("#edit-status").hidden=false;
  if(item)for(const el of $("#idea-form").elements)if(el.name&&item[el.name]!==undefined)el.value=item[el.name];
  $("#editor").showModal();
 }
@@ -77,7 +78,7 @@ handleForm("#pass-form","#owner-error",async data=>{
 $("#new").onclick=()=>openEditor();
 $("#settings").onclick=()=>{$("#owner-error").textContent="";$("#owner").showModal();};
 $("#logout").onclick=async()=>{try{await api("/logout","POST",{});locked();}catch(e){notice(e.message);}};
-$("#cards").onclick=e=>{const card=e.target.closest("[data-id]");if(card)showDetail(card.dataset.id);};
+$("#cards").onclick=e=>{const card=e.target.closest("[data-id]");if(!card)return; const item=items.find(x=>x.id===card.dataset.id); if(card.dataset.action==="edit")openEditor(item);else if(card.dataset.action==="delete"){selected=item;$("#delete").click();}else showDetail(card.dataset.id);};
 $("#edit").onclick=()=>{$("#detail").close();openEditor(selected);};
 $("#delete").onclick=async()=>{
  if(!confirm("「"+selected.title+"」を削除しますか？ この操作は取り消せません。"))return;

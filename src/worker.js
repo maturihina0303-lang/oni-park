@@ -94,9 +94,9 @@ async function api(request,env,path) {
  }
  const id=path.match(/^\/api\/ideas\/([a-f0-9-]{36})$/)?.[1];
  if((path==="/api/ideas"&&request.method==="POST")||(id&&request.method==="PUT")){
-  if(id&&s.role!=="owner")fail("編集はオーナーだけができます。",403);
+
   const item=validateIdea(await bodyOf(request)),now=new Date().toISOString();
-  if(s.role!=="owner")item.status="アイデア";
+
   const vals=[item.title,item.author,item.theme,item.stage,item.monster,item.mission,item.victory,item.highlight,item.status];
   if(id){
    const result=await env.DB.prepare("UPDATE ideas SET title=?,author=?,theme=?,stage=?,monster=?,mission=?,victory=?,highlight=?,status=?,updated=? WHERE id=?").bind(...vals,now,id).run();
@@ -105,7 +105,7 @@ async function api(request,env,path) {
   return response({ok:true},id?200:201);
  }
  if(id&&request.method==="DELETE"){
-  if(s.role!=="owner")fail("削除はオーナーだけができます。",403);
+
   await env.DB.prepare("DELETE FROM ideas WHERE id=?").bind(id).run();return response({ok:true});
  }
  fail("ページが見つかりません。",404);
