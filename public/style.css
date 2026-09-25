@@ -5,7 +5,7 @@
 /* Login screen */
 body:has(#gate:not([hidden])) > header,body:has(#gate:not([hidden])) > footer{display:none}
 body:has(#gate:not([hidden])) main{max-width:none;min-height:100vh;min-height:100dvh;padding:24px;display:grid;place-items:center}
-.gate{display:block;width:100%;max-width:440px;padding:0}
+.gate{display:block;width:100%;max-width:440px;padding:0;margin-inline:auto;justify-self:center}
 #login{padding:32px}
 .login-mark{margin:0 auto 18px;width:48px;height:48px}
 #login h2,#login-help{text-align:center}
