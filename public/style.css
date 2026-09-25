@@ -51,3 +51,10 @@ body{font-family:"BIZ UDPGothic","Meiryo","Yu Gothic",sans-serif;font-weight:500
 .note-open h3,#detail-content h2{font-weight:800}
 #detail-content h3,.note-label{font-weight:700}
 
+
+/* Keep close controls visible while a dialog scrolls. */
+dialog{--dialog-padding:30px;scroll-padding-top:90px}
+dialog .dialog-head{position:sticky;top:calc(-1 * var(--dialog-padding));z-index:5;margin:calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding)) 20px;padding:16px var(--dialog-padding);background:var(--paper);border-bottom:1px solid var(--line)}
+dialog .dialog-head button{flex-shrink:0;min-width:44px;min-height:44px;display:grid;place-items:center}
+@media(max-width:600px){dialog{--dialog-padding:22px}}
+
