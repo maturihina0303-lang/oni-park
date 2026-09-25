@@ -43,3 +43,11 @@ body:has(#gate:not([hidden])) main{max-width:none;min-height:100vh;min-height:10
 .status-filter[aria-pressed="true"]{background:var(--status-bg,#fce7e7);box-shadow:0 0 0 2px var(--status-line,#b44754);color:var(--status-ink,#803541)}
 @media(max-width:600px){.status-filters{gap:9px}.status-filter{padding:8px 13px}}
 
+
+/* Stronger readable text */
+body{font-family:"BIZ UDPGothic","Meiryo","Yu Gothic",sans-serif;font-weight:500}
+.note-open p,#detail-content p,input,textarea,select{font-weight:600;color:#482d31}
+.note-meta,.note-theme,.muted,#login-help{font-weight:600}
+.note-open h3,#detail-content h2{font-weight:800}
+#detail-content h3,.note-label{font-weight:700}
+

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鬼パーク｜鬼ごっこ企画のひろば</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./style.css?v=genres-4"><script src="./config.js" defer></script><script src="./app.js?v=genres-4" defer></script></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鬼パーク｜鬼ごっこ企画のひろば</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./style.css?v=notes-5"><script src="./config.js" defer></script><script src="./app.js?v=notes-5" defer></script></head>
 <body>
 <header><a class="brand" href="./"><span class="mark">鬼</span>鬼パーク<span class="brand-note">みんなの企画ひろば</span></a><div id="account" hidden><span id="role"></span><button id="settings" hidden>オーナー設定</button><button id="logout">退出</button></div></header>
 <main>
@@ -8,7 +8,7 @@
 </section>
 <section id="park" hidden>
 <div class="intro"><div><span class="eyebrow">OUR NEXT ONIGOKKO</span><h1>鬼ごっこ企画のひろば</h1><p>思いついたら残して、みんなのアイデアを次の一本に。</p></div><button id="new" class="primary">＋ 企画を投稿</button></div>
-<div class="toolbar"><label class="search">企画を探す<input id="search" type="search" placeholder="題材・舞台・ミッションで検索"></label><label>題材<select id="theme"><option value="">すべての題材</option><option>金ロー</option><option>新作映画</option><option>ゲーム</option><option>アニメ</option><option>オリジナルホラー</option><option>その他</option></select></label></div>
+<div class="toolbar"><label class="search">企画を探す<input id="search" type="search" placeholder="題材・マップ・目的で検索"></label><label>題材<select id="theme"><option value="">すべての題材</option><option>金ロー</option><option>新作映画</option><option>ゲーム</option><option>アニメ</option><option>オリジナルホラー</option><option>その他</option></select></label></div>
 <div id="status-filters" class="status-filters" role="group" aria-label="進捗で絞り込み"><button type="button" data-status="" class="status-filter " aria-pressed="true">すべて</button><button type="button" data-status="アイデア" class="status-filter status-idea" aria-pressed="false">アイデア</button><button type="button" data-status="検討中" class="status-filter status-review" aria-pressed="false">検討中</button><button type="button" data-status="制作中" class="status-filter status-production" aria-pressed="false">制作中</button><button type="button" data-status="撮影済み" class="status-filter status-done" aria-pressed="false">撮影済み</button></div>
 <div class="list-heading"><h2>企画ノート</h2><span id="count"></span></div><div id="cards" class="cards"></div>
 <div id="empty" class="empty" hidden><span>✳</span><h2>ここから、企画を育てよう。</h2><p>「企画を投稿」から自分の案や、提案してもらった案を残せます。</p></div>
@@ -17,11 +17,11 @@
 <dialog id="editor"><form id="idea-form"><div class="dialog-head"><h2 id="editor-title">新しい企画</h2><button type="button" data-close="editor" aria-label="閉じる">×</button></div><p class="muted">＊は必須です。短いメモからでも始められます。</p>
 <label>企画タイトル＊<input name="title" required maxlength="100" placeholder="例：巨大かかし鬼ごっこ"></label>
 <div class="columns"><label>投稿者名＊<input name="author" required maxlength="40" placeholder="表示する名前"></label><label>題材<select name="theme" required><option value="" disabled selected>題材を選択</option><option>金ロー</option><option>新作映画</option><option>ゲーム</option><option>アニメ</option><option>オリジナルホラー</option><option>その他</option></select></label></div>
-<label>舞台・マップ＊<textarea name="stage" required maxlength="1000" placeholder="例：畑と牧場が広がる農村"></textarea></label>
-<label>鬼の特徴＊<textarea name="monster" required maxlength="2000" placeholder="見た目、能力、追いかけ方"></textarea></label>
-<label>逃げながら行うミッション＊<textarea name="mission" required maxlength="3000" placeholder="プレイヤーが何をする企画か"></textarea></label>
-<label>勝利・終了条件＊<textarea name="victory" required maxlength="1000" placeholder="何ができたらクリア？"></textarea></label>
-<label>見どころ・制作メモ<textarea name="highlight" maxlength="2000" placeholder="盛り上がる場面、必要な仕掛けなど"></textarea></label>
+<label>【マップ】＊<textarea name="stage" required maxlength="1000" placeholder="例：畑と牧場が広がる農村"></textarea></label>
+<label>【鬼】＊<textarea name="monster" required maxlength="2000" placeholder="見た目、能力、追いかけ方"></textarea></label>
+<label>【隠しアイテム】<textarea name="mission" maxlength="3000" placeholder="隠すアイテム・場所・使い道（なしの場合は未記入でOK）"></textarea></label>
+<label>【最終目的】＊<textarea name="victory" required maxlength="1000" placeholder="何ができたらクリア？"></textarea></label>
+<label>【制作メモ】<textarea name="highlight" maxlength="6000" placeholder="盛り上がる場面、必要な仕掛けなど"></textarea></label>
 <label id="edit-status">進捗<select name="status"><option>アイデア</option><option>検討中</option><option>制作中</option><option>撮影済み</option></select></label>
 <p id="editor-error" class="error" role="alert"></p><button type="submit" class="primary">保存する</button></form></dialog>
 <dialog id="detail"><div class="dialog-head"><span class="eyebrow">IDEA NOTE</span><button data-close="detail" aria-label="閉じる">×</button></div><div id="detail-content"></div><div id="detail-actions" hidden><button id="edit">編集する</button><button id="delete" class="danger">削除する</button></div></dialog>

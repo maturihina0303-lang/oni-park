@@ -14,7 +14,7 @@ test("日本語の濁点を正規化して同じ合言葉として照合",async(
 test("必須項目と進捗を検証",()=>{
  const body={title:"鬼",author:"私",theme:"妖怪",stage:"村",monster:"天狗",mission:"風車",victory:"脱出",highlight:"",status:"アイデア"};
  assert.equal(validateIdea(body).title,"鬼");
- assert.throws(()=>validateIdea({...body,mission:""}));
+ assert.throws(()=>validateIdea({...body,stage:""}));
  assert.throws(()=>validateIdea({...body,status:"invalid"}));
 });
 test("未認証の閲覧・投稿はデータベースを読まず拒否",async()=>{

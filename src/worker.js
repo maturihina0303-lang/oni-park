@@ -12,14 +12,14 @@ function response(data,status=200,headers={}) { return Response.json(data,{statu
 function fail(message,status=400) { throw Object.assign(new Error(message),{status}); }
 const statuses=["アイデア","検討中","制作中","撮影済み"];
 export function validateIdea(body) {
- const limits={title:100,author:40,theme:40,stage:1000,monster:2000,mission:3000,victory:1000,highlight:2000};
+ const limits={title:100,author:40,theme:40,stage:1000,monster:2000,mission:3000,victory:1000,highlight:6000};
  const item={};
  for(const [key,max] of Object.entries(limits)) {
   if(typeof body[key]!=="string")fail("入力内容を確認してください。");
   item[key]=body[key].trim();
   if(item[key].length>max)fail("入力が長すぎます。");
  }
- for(const key of ["title","author","stage","monster","mission","victory"])if(!item[key])fail("必須項目を入力してください。");
+ for(const key of ["title","author","stage","monster","victory"])if(!item[key])fail("必須項目を入力してください。");
  if(!statuses.includes(body.status))fail("進捗を選択してください。");
  item.status=body.status; return item;
 }
