@@ -54,7 +54,7 @@ test("参加者が6種類の進捗で投稿・編集・削除でき、未認証�
  const db={prepare(sql){return {values:[],bind(...v){this.values=v;return this;},async first(){return sql.includes("sessions")?{role:"member",version:"v"}:{version:"v"};},async run(){calls.push({sql,values:this.values});return {meta:{changes:1}};}}}};
  const env={DB:db,ALLOWED_ORIGIN:origin};
  const body={title:"試験",author:"試験",theme:"",stage:"街",monster:"鬼",mission:"逃げる",victory:"脱出",highlight:""};
- for(const status of ["アイデア","検討中","制作中","マップ制作中","モデル制作中","撮影済み"]){
+ for(const status of ["アイデア","検討中","マップ制作中","モデル制作中","確認待ち","撮影済み"]){
   for(const method of ["POST","PUT"]){
    const path=method==="POST"?"/ideas":"/ideas/00000000-0000-0000-0000-000000000000";
    const r=await worker.fetch(req(path,method,{...body,status},"a".repeat(64)),env);
