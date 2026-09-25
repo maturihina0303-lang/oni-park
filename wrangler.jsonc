@@ -1,0 +1,16 @@
+{
+  "name": "oni-park-api",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-01",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://maturihina0303-lang.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oni-park",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

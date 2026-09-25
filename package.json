@@ -1,0 +1,15 @@
+{
+  "name": "oni-park",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test",
+    "db:local": "wrangler d1 migrations apply oni-park --local",
+    "db:remote": "wrangler d1 migrations apply oni-park --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

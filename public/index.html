@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鬼パーク｜鬼ごっこ企画のひろば</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./style.css"><script src="./config.js" defer></script><script src="./app.js" defer></script></head>
+<body>
+<header><a class="brand" href="./"><span class="mark">鬼</span>鬼パーク<span class="brand-note">みんなの企画ひろば</span></a><div id="account" hidden><span id="role"></span><button id="settings" hidden>オーナー設定</button><button id="logout">退出</button></div></header>
+<main>
+<section id="gate" class="gate">
+<div class="welcome"><span class="eyebrow">ONI PARK / PRIVATE IDEA GARDEN</span><h1>その「逃げろ！」が、<br>次の企画になる。</h1><p>ひらめきを持ち寄って、育てる場所。<br>鬼も、舞台も、ミッションも。<br>次の鬼ごっこを、ここから。</p><div class="illustration" aria-hidden="true"><span class="sun"></span><span class="hill one"></span><span class="hill two"></span><span class="oni">鬼</span><span class="flag">IDEA!</span><span class="flower">✳</span></div></div>
+<form id="login" class="panel"><span class="pill">メンバー限定</span><h2>鬼パークへようこそ</h2><p id="login-help">オーナーから教わった合言葉で入園できます。</p><label for="password" id="password-label">合言葉</label><input id="password" type="text" lang="ja" placeholder="合言葉（かな入力OK）" required maxlength="200" autocomplete="off"><button class="primary" type="submit">入園する →</button><p id="login-error" class="error" role="alert"></p><button type="button" id="owner-toggle" class="text-button">オーナーとしてログイン</button></form>
+</section>
+<section id="park" hidden>
+<div class="intro"><div><span class="eyebrow">OUR NEXT ONIGOKKO</span><h1>鬼ごっこ企画のひろば</h1><p>思いついたら残して、みんなのアイデアを次の一本に。</p></div><button id="new" class="primary">＋ 企画を投稿</button></div>
+<div class="toolbar"><label class="search">企画を探す<input id="search" type="search" placeholder="題材・舞台・ミッションで検索"></label><label>進捗<select id="status"><option value="">すべての進捗</option>アイデア</option><option>検討中</option><option>制作中</option><option>撮影済み</option></select></label><label>題材<select id="theme"><option value="">すべての題材</option></select></label></div>
+<div class="list-heading"><h2>企画ノート</h2><span id="count"></span></div><div id="cards" class="cards"></div>
+<div id="empty" class="empty" hidden><span>✳</span><h2>ここから、企画を育てよう。</h2><p>「企画を投稿」から自分の案や、提案してもらった案を残せます。</p></div>
+</section>
+</main><footer>鬼パーク <span>ひらめきを、みんなで育てよう。</span></footer>
+<dialog id="editor"><form id="idea-form"><div class="dialog-head"><h2 id="editor-title">新しい企画</h2><button type="button" data-close="editor" aria-label="閉じる">×</button></div><p class="muted">＊は必須です。短いメモからでも始められます。</p>
+<label>企画タイトル＊<input name="title" required maxlength="100" placeholder="例：巨大かかし鬼ごっこ"></label>
+<div class="columns"><label>投稿者名＊<input name="author" required maxlength="40" placeholder="表示する名前"></label><label>題材<input name="theme" maxlength="40" placeholder="例：妖怪・映画・オリジナル"></label></div>
+<label>舞台・マップ＊<textarea name="stage" required maxlength="1000" placeholder="例：畑と牧場が広がる農村"></textarea></label>
+<label>鬼の特徴＊<textarea name="monster" required maxlength="2000" placeholder="見た目、能力、追いかけ方"></textarea></label>
+<label>逃げながら行うミッション＊<textarea name="mission" required maxlength="3000" placeholder="プレイヤーが何をする企画か"></textarea></label>
+<label>勝利・終了条件＊<textarea name="victory" required maxlength="1000" placeholder="何ができたらクリア？"></textarea></label>
+<label>見どころ・制作メモ<textarea name="highlight" maxlength="2000" placeholder="盛り上がる場面、必要な仕掛けなど"></textarea></label>
+<label id="edit-status">進捗<select name="status"><option>アイデア</option><option>検討中</option><option>制作中</option><option>撮影済み</option></select></label>
+<p id="editor-error" class="error" role="alert"></p><button type="submit" class="primary">保存する</button></form></dialog>
+<dialog id="detail"><div class="dialog-head"><span class="eyebrow">IDEA NOTE</span><button data-close="detail" aria-label="閉じる">×</button></div><div id="detail-content"></div><div id="detail-actions" hidden><button id="edit">編集する</button><button id="delete" class="danger">削除する</button></div></dialog>
+<dialog id="owner"><form id="pass-form"><div class="dialog-head"><h2>合言葉の設定・変更</h2><button type="button" data-close="owner" aria-label="閉じる">×</button></div><p>変更すると、参加者は新しい合言葉で入り直す必要があります。</p><label>新しい合言葉（8文字以上）<input name="password" type="text" lang="ja" required minlength="8" maxlength="200" autocomplete="off" placeholder="かな入力OK"></label><label>確認のため、もう一度<input name="confirm" type="text" required minlength="8" maxlength="200" autocomplete="off"></label><p id="owner-error" class="error" role="alert"></p><button class="primary" type="submit">この合言葉に変更</button></form></dialog>
+<div id="notice" role="status" class="notice" hidden></div>
+</body></html>
