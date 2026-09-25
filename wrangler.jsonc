@@ -9,7 +9,7 @@
     {
       "binding": "DB",
       "database_name": "oni-park",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "90fc21d7-5b21-4555-ba51-070fe0931808",
       "migrations_dir": "migrations"
     }
   ]
