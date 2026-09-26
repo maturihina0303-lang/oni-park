@@ -68,3 +68,5 @@ dialog .dialog-head button{flex-shrink:0;min-width:44px;min-height:44px;display:
 .reference-gallery figure:only-child{grid-column:1/-1}.reference-gallery figure:only-child .reference-open img{height:auto;max-height:none}
 
 .workflow-filters{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:24px}.workflow-filters label{min-width:180px}.workflow-filters p{font-size:13px;color:var(--muted)}.workflow-summary{padding:12px 22px;background:#f9ece9;font-size:14px;line-height:1.8}.note-actions{flex-wrap:wrap}.workflow-actions{display:flex;flex-wrap:wrap;gap:10px}#workflow-history{padding-left:24px}#workflow-history li{padding:12px;border-bottom:1px solid var(--line)}#workflow-history p{white-space:pre-wrap;overflow-wrap:anywhere}#workflow-history small{color:var(--muted)}
+
+#production-panel{border-top:1px solid var(--line);margin-top:28px;padding-top:18px}#production-panel details{padding:12px 0}.production-text{white-space:pre-wrap;overflow-wrap:anywhere}#production-panel input[type=checkbox]{width:auto}

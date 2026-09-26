@@ -1,3 +1,4 @@
+import {productionRoute} from './production.js';
 const encoder = new TextEncoder();
 export const normalize = s => s.normalize("NFC");
 export async function digest(s) { return hex(await crypto.subtle.digest("SHA-256", encoder.encode(s))); }
@@ -116,6 +117,7 @@ async function api(request,env,path) {
  }
  const s=await session(request,env);
  if(!s)fail("合言葉を入力して入園してください。",401);
+ const production=await productionRoute(request,env,path,bodyOf);if(production)return response(production);
  if(path==="/api/me"&&request.method==="GET")return response({role:s.role});
  if(path==="/api/logout"&&request.method==="POST"){
   await env.DB.prepare("DELETE FROM sessions WHERE token=?").bind(s.token).run();

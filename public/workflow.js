@@ -12,7 +12,7 @@ function workflowSummary(item){
 async function openWorkflow(id){
  workflowId=id;workflowVersion=0;$('#workflow-title').textContent=items.find(x=>x.id===id)?.title||'';
  $('#workflow-form').reset();$('#workflow-error').textContent='';$('#workflow-history').replaceChildren();
- $('#workflow-dialog').showModal();await loadWorkflow();
+ $('#workflow-dialog').showModal();await Promise.all([loadWorkflow(),loadProduction(id)]);
 }
 async function loadWorkflow(){
  const id=workflowId;workflowLoading=true;$('#workflow-form [type=submit]').disabled=true;$('#workflow-reload').disabled=true;
@@ -29,7 +29,7 @@ async function loadWorkflow(){
  finally{workflowLoading=false;$('#workflow-reload').disabled=false;}
 }
 $('#workflow-detail').onclick=()=>{const id=selected?.id;if(id){$('#detail').close();openWorkflow(id);}};
-$('#workflow-reload').onclick=()=>{if(!workflowLoading)loadWorkflow();};
+$('#workflow-reload').onclick=()=>{if(!workflowLoading){loadWorkflow();loadProduction(workflowId);}};
 for(const id of ['assignee-filter','reviewer-filter'])$('#'+id).onchange=render;
 $('#workflow-form').onsubmit=async e=>{
  e.preventDefault();if(workflowLoading)return;
@@ -42,4 +42,4 @@ $('#workflow-form').onsubmit=async e=>{
  finally{workflowLoading=false;button.disabled=false;$('#workflow-reload').disabled=false;}
 };
 
-enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
+
