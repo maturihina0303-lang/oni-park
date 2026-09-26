@@ -11,6 +11,16 @@ export function equal(a,b) { if(a.length!==b.length)return false;let d=0;for(let
 function response(data,status=200,headers={}) { return Response.json(data,{status,headers:{"Cache-Control":"no-store",...headers}}); }
 function fail(message,status=400) { throw Object.assign(new Error(message),{status}); }
 const statuses=["アイデア","検討中","マップ制作中","モデル制作中","確認待ち","撮影済み"];
+const participants=['企画AI','台本AI','マップAI','モデルAI','ひなこ'];
+export function validateWorkflow(b){
+ if(!b||!Number.isSafeInteger(b.version)||b.version<0)fail('管理情報を読み直してください。');
+ if(!['',...participants].includes(b.assignee)||!['',...participants].includes(b.reviewer))fail('担当を選択してください。');
+ if(!['未着手','作業中','確認待ち','差し戻し','完了','保留'].includes(b.state))fail('作業状態を選択してください。');
+ if(!b.assignee&&!['未着手','保留'].includes(b.state))fail('作業担当を選択してください。');
+ if(b.state==='確認待ち'&&!b.reviewer)fail('確認を待つ相手を選択してください。');
+ if(typeof b.memo!=='string'||!b.memo.trim()||b.memo.length>2000)fail('受け渡し内容を2000文字以内で記入してください。');
+ return {assignee:b.assignee,reviewer:b.reviewer,state:b.state,memo:b.memo.trim(),version:b.version};
+}
 export function validateIdea(body) {
  const limits={title:100,author:40,theme:40,stage:1000,monster:2000,mission:3000,victory:1000,highlight:6000};
  const item={};
@@ -126,6 +136,26 @@ async function api(request,env,path) {
  if(path==="/api/ideas"&&request.method==="GET"){
   const result=await env.DB.prepare("SELECT id,title,author,theme,stage,monster,mission,victory,highlight,status,runner,created,updated FROM ideas ORDER BY updated DESC").all();
   return response({items:result.results});
+ }
+ if(path==='/api/workflows'&&request.method==='GET'){
+  return response({items:(await env.DB.prepare('SELECT * FROM idea_workflow').all()).results});
+ }
+ const workflowId=path.match(/^\/api\/ideas\/([a-f0-9-]{36})\/workflow$/)?.[1];
+ if(workflowId&&['GET','PUT'].includes(request.method)){
+  const idea=await env.DB.prepare('SELECT updated FROM ideas WHERE id=?').bind(workflowId).first();
+  if(!idea)fail('企画が見つかりません。',404);
+  if(request.method==='PUT'){
+   const b=validateWorkflow(await bodyOf(request));
+   const result=await env.DB.batch([
+    env.DB.prepare('INSERT OR IGNORE INTO idea_workflow(idea_id) VALUES(?)').bind(workflowId),
+    env.DB.prepare('UPDATE idea_workflow SET assignee=?,reviewer=?,state=?,memo=?,version=version+1,updated=?,idea_updated=?,actor_role=? WHERE idea_id=? AND version=?')
+     .bind(b.assignee,b.reviewer,b.state,b.memo,new Date().toISOString(),idea.updated,s.role,workflowId,b.version)
+   ]);
+   if(!result[1].meta.changes)fail('別の人が管理情報を更新しました。「最新情報を読み直す」で確認してから保存してください。',409);
+  }
+  const current=await env.DB.prepare('SELECT * FROM idea_workflow WHERE idea_id=?').bind(workflowId).first();
+  const history=await env.DB.prepare('SELECT * FROM workflow_history WHERE idea_id=? ORDER BY version DESC LIMIT 50').bind(workflowId).all();
+  return response({current:current||{idea_id:workflowId,assignee:'',reviewer:'',state:'未着手',memo:'',version:0,updated:'',idea_updated:''},history:history.results,idea_updated:idea.updated});
  }
  const imageId=path.match(/^\/api\/ideas\/([a-f0-9-]{36})\/images$/)?.[1];
  if(imageId&&request.method==="GET"){

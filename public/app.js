@@ -1,5 +1,6 @@
 const $=s=>document.querySelector(s);
 let token=sessionStorage.getItem("oni-park-session")||"";
+let workflows={},workflowReady=false,workflowId=null,workflowVersion=0,workflowLoading=false;
 let role="",ownerMode=false,items=[],selected=null,editing=null,activeStatus="";
 const genres=["金ロー","新作映画","ゲーム","アニメ","オリジナルホラー","その他"];
 const genreOf = value => genres.includes(value)?value:"その他";
@@ -22,18 +23,19 @@ async function enter(){
  await refresh();
 }
 async function refresh(){
- items=(await api("/ideas")).items;
+ const [ideas,flow]=await Promise.all([api("/ideas"),api("/workflows").catch(e=>{notice("担当情報を読み込めませんでした。"+e.message);return null;})]);
+ items=ideas.items;workflowReady=!!flow;workflows=Object.fromEntries((flow?.items||[]).map(x=>[x.idea_id,x]));
  render();
 }
 const statusClass = s => ({"アイデア":"idea","検討中":"review","確認待ち":"production","マップ制作中":"map","モデル制作中":"model","撮影済み":"done"}[s]||"idea");
 function render(){
  const q=$("#search").value.toLocaleLowerCase(),status=activeStatus,theme=$("#theme").value;
- const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.runner,x.mission,x.victory,x.highlight].join(" ").toLocaleLowerCase().includes(q));
+ const filtered=items.filter(x=>workflowMatches(x)&&(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.runner,x.mission,x.victory,x.highlight].join(" ").toLocaleLowerCase().includes(q));
  $("#count").textContent=filtered.length+" 件";
  $("#empty").hidden=filtered.length!==0;
  $("#empty h2").textContent=items.length?"条件に合う企画がありません":"ここから、企画を育てよう。";
  $("#empty p").textContent=items.length?"キーワードや絞り込みを変えてみてください。":"「企画を投稿」から自分の案や、提案してもらった案を残せます。";
- $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(genreOf(x.theme))+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">【最終目的】</span><p>'+esc(x.victory)+'</p></button><div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
+ $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(genreOf(x.theme))+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">【最終目的】</span><p>'+esc(x.victory)+'</p></button>'+workflowSummary(x)+'<div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="workflow">担当管理</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
 }
 async function showDetail(id){
  selected=items.find(x=>x.id===id);if(!selected)return;
@@ -89,7 +91,7 @@ handleForm("#pass-form","#owner-error",async data=>{
 $("#new").onclick=()=>openEditor();
 $("#settings").onclick=()=>{$("#owner-error").textContent="";$("#owner").showModal();};
 $("#logout").onclick=async()=>{try{await api("/logout","POST",{});locked();}catch(e){notice(e.message);}};
-$("#cards").onclick=e=>{const card=e.target.closest("[data-id]");if(!card)return; const item=items.find(x=>x.id===card.dataset.id); if(card.dataset.action==="edit")openEditor(item);else if(card.dataset.action==="delete"){selected=item;$("#delete").click();}else showDetail(card.dataset.id);};
+$("#cards").onclick=e=>{const card=e.target.closest("[data-id]");if(!card)return; const item=items.find(x=>x.id===card.dataset.id); if(card.dataset.action==="workflow")openWorkflow(item.id);else if(card.dataset.action==="edit")openEditor(item);else if(card.dataset.action==="delete"){selected=item;$("#delete").click();}else showDetail(card.dataset.id);};
 $("#edit").onclick=()=>{$("#detail").close();openEditor(selected);};
 $("#delete").onclick=async()=>{
  if(!confirm("「"+selected.title+"」を削除しますか？ この操作は取り消せません。"))return;
@@ -98,7 +100,7 @@ $("#delete").onclick=async()=>{
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
 $("#status-filters").onclick=e=>{const button=e.target.closest("[data-status]");if(!button)return;activeStatus=button.dataset.status;document.querySelectorAll("[data-status]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));render();};
 for(const id of ["search","theme"])$("#"+id).addEventListener(id==="search"?"input":"change",render);
-enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
+
 
 const referenceConfig={
  stage:{label:'マップ',views:['設計図','全体図','外観','内装','動線','雰囲気'],needed:['全体図','外観','内装','動線'],hint:'Minecraftの建築画像を優先。全体の配置・建物・内部・逃走経路が分かる資料をそろえます。',placeholder:'例：Java 1.21.1 / Fabric、300×300ブロック。入口・出口、主要施設、鬼が通れる幅と高さ、隠しアイテム6つの候補位置。未定の寸法は「未定」と記入。'},
