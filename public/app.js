@@ -101,9 +101,9 @@ for(const id of ["search","theme"])$("#"+id).addEventListener(id==="search"?"inp
 enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
 
 const referenceConfig={
- stage:{label:'マップ',views:['全体図','外観','内装','動線','雰囲気'],needed:['全体図','外観','内装','動線'],hint:'Minecraftの建築画像を優先。全体の配置・建物・内部・逃走経路が分かる資料をそろえます。',placeholder:'例：Java 1.21.1 / Fabric、300×300ブロック。入口・出口、主要施設、鬼が通れる幅と高さ、隠しアイテム6つの候補位置。未定の寸法は「未定」と記入。'},
- monster:{label:'鬼',views:['正面','側面','背面','細部','雰囲気'],needed:['正面','側面','背面'],hint:'1体の全身と正面・側面・背面が分かる資料。角張った形やBlockbenchの見本を優先。',placeholder:'身長・最大幅・色・持ち物・背面の形。見た目と当たり判定は分けて記入。資料にない部分は未定と明記。'},
- runner:{label:'逃げ側',views:['正面','側面','背面','細部','雰囲気'],needed:['正面','側面','背面'],hint:'ノーマルなら画像は不要。姿を変える場合に全身と各方向の資料を追加します。',placeholder:'ノーマルなら普段の姿。変更する場合は服装・体格・色・背面・持ち物。'},
+ stage:{label:'マップ',views:['設計図','全体図','外観','内装','動線','雰囲気'],needed:['全体図','外観','内装','動線'],hint:'Minecraftの建築画像を優先。全体の配置・建物・内部・逃走経路が分かる資料をそろえます。',placeholder:'例：Java 1.21.1 / Fabric、300×300ブロック。入口・出口、主要施設、鬼が通れる幅と高さ、隠しアイテム6つの候補位置。未定の寸法は「未定」と記入。'},
+ monster:{label:'鬼',views:['三面図','正面','側面','背面','細部','雰囲気'],needed:['正面','側面','背面'],hint:'1体の全身と正面・側面・背面が分かる資料。角張った形やBlockbenchの見本を優先。',placeholder:'身長・最大幅・色・持ち物・背面の形。見た目と当たり判定は分けて記入。資料にない部分は未定と明記。'},
+ runner:{label:'逃げ側',views:['三面図','正面','側面','背面','細部','雰囲気'],needed:['正面','側面','背面'],hint:'ノーマルなら画像は不要。姿を変える場合に全身と各方向の資料を追加します。',placeholder:'ノーマルなら普段の姿。変更する場合は服装・体格・色・背面・持ち物。'},
  mission:{label:'アイテム',views:['全体図','正面','側面','背面','細部','雰囲気'],needed:['全体図','細部'],hint:'6つのアイテムの名前・形・色の違いが分かる資料。集合画像も使えます。',placeholder:'6種類の見分け方、サイズ、設置状態、手に持つか、モデルの使用先。'}
 };
 let referenceState={},detailReferences=null;
@@ -151,9 +151,9 @@ async function collectReferences(){
     const canvas=document.createElement('canvas');
     for(let size=1600;size>=300;size=Math.floor(size*.75)){
      const scale=Math.min(1,size/Math.max(img.naturalWidth,img.naturalHeight));canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
-     const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);data=canvas.toDataURL('image/jpeg',.85);if(data.length<=180000)break;
+     const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);data=canvas.toDataURL('image/jpeg',.85);if(data.length<=300000)break;
     }
-    if(data.length>180000)throw new Error('画像を小さくして選び直してください。');
+    if(data.length>300000)throw new Error('画像を小さくして選び直してください。');
    }
    output[kind].images.push({data,view:ref.view,note:ref.note,source:ref.source});
   }
@@ -162,7 +162,8 @@ async function collectReferences(){
 }
 function referenceSummary(kind,section,runner){
  if(kind==='runner'&&runner?.trim()==='ノーマル')return 'ノーマルのため、追加モデルの参考画像は不要です。';
- const missing=referenceConfig[kind].needed.filter(v=>!section.images.some(img=>img.view===v));
+ const combined=section.images.some(img=>kind==='stage'?img.view==='設計図':['monster','runner'].includes(kind)&&img.view==='三面図');
+ const missing=combined?[]:referenceConfig[kind].needed.filter(v=>!section.images.some(img=>img.view===v));
  return (missing.length?'あると作りやすい資料：'+missing.join('・'):'各方向の資料が登録されています。')+(!section.brief?' 制作条件は未記入です。':'')+' ※画像の用途による目安です。内容の整合性・寸法・ゲーム内動作は別途確認してください。';
 }
 function referenceMarkup(kind,section,runner){

@@ -27,12 +27,12 @@ export function validateIdea(body) {
  }
  item.status=body.status; return item;
 }
-export function validateImages(body) {
+export function validateImages(body,limit=180000) {
  const images={};
  for(const key of ['stage_image','monster_image','runner_image','mission_image']) {
   if(body[key]===undefined)continue;
   const value=body[key];
-  if(typeof value!=="string" || value.length>180000 || (value && !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)))fail("画像を選び直してください。画像が大きすぎるか、形式が対応していません。");
+  if(typeof value!=="string" || value.length>limit || (value && !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)))fail("画像を選び直してください。画像が大きすぎるか、形式が対応していません。");
   images[key]=value;
  }
  return images;
@@ -47,8 +47,8 @@ export function validateReferences(value) {
   output[kind]={brief:section.brief.trim(),images:section.images.map(img=>{
    if(!img||typeof img!=="object")fail("画像を確認してください。");
    if(!img.data)fail("画像を選択してください。");
-   validateImages({stage_image:img.data});
-   if(!['雰囲気','全体図','外観','内装','動線','正面','側面','背面','細部'].includes(img.view))fail("画像の用途を選んでください。");
+   validateImages({stage_image:img.data},300000);
+   if(!['設計図','三面図','雰囲気','全体図','外観','内装','動線','正面','側面','背面','細部'].includes(img.view))fail("画像の用途を選んでください。");
    if(typeof img.note!=="string"||img.note.length>1000||typeof img.source!=="string"||img.source.length>2000)fail("画像の説明が長すぎます。");
    const source=img.source.trim();
    if(source&&!/^https?:\/\//i.test(source))fail("出典URLはhttpまたはhttpsで入力してください。");
@@ -60,7 +60,7 @@ export function validateReferences(value) {
 }
 async function bodyOf(request) {
  if(!request.headers.get("content-type")?.includes("application/json"))fail("JSON形式で送信してください。",415);
- const text=await request.text();if(text.length>(new URL(request.url).pathname.startsWith("/api/ideas")?4500000:16000))fail("入力が大きすぎます。",413);
+ const text=await request.text();if(text.length>(new URL(request.url).pathname.startsWith("/api/ideas")?7500000:16000))fail("入力が大きすぎます。",413);
  try{return JSON.parse(text)}catch{fail("入力を読み取れませんでした。");}
 }
 async function setting(env) {return env.DB.prepare("SELECT * FROM settings WHERE id=1").first();}
