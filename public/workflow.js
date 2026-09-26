@@ -12,7 +12,7 @@ function workflowSummary(item){
 async function openWorkflow(id){
  workflowId=id;workflowVersion=0;$('#workflow-title').textContent=items.find(x=>x.id===id)?.title||'';
  $('#workflow-form').reset();$('#workflow-error').textContent='';$('#workflow-history').replaceChildren();
- $('#workflow-dialog').showModal();await Promise.all([loadWorkflow(),loadProduction(id)]);
+ $('#workflow-dialog').showModal();await Promise.all([loadWorkflow(),loadProduction(id),loadRetrospective(id)]);
 }
 async function loadWorkflow(){
  const id=workflowId;workflowLoading=true;$('#workflow-form [type=submit]').disabled=true;$('#workflow-reload').disabled=true;
@@ -29,7 +29,7 @@ async function loadWorkflow(){
  finally{workflowLoading=false;$('#workflow-reload').disabled=false;}
 }
 $('#workflow-detail').onclick=()=>{const id=selected?.id;if(id){$('#detail').close();openWorkflow(id);}};
-$('#workflow-reload').onclick=()=>{if(!workflowLoading){loadWorkflow();loadProduction(workflowId);}};
+$('#workflow-reload').onclick=()=>{if(!workflowLoading){loadWorkflow();loadProduction(workflowId);loadRetrospective(workflowId);}};
 for(const id of ['assignee-filter','reviewer-filter'])$('#'+id).onchange=render;
 $('#workflow-form').onsubmit=async e=>{
  e.preventDefault();if(workflowLoading)return;
