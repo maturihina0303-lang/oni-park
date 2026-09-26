@@ -41,5 +41,3 @@ $('#workflow-form').onsubmit=async e=>{
  }catch(err){$('#workflow-error').textContent=err.message;}
  finally{workflowLoading=false;button.disabled=false;$('#workflow-reload').disabled=false;}
 };
-
-
