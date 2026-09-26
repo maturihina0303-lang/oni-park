@@ -37,9 +37,30 @@ export function validateImages(body) {
  }
  return images;
 }
+export function validateReferences(value) {
+ if(value===undefined)return undefined;
+ if(!value||typeof value!=="object"||Array.isArray(value))fail("制作資料を確認してください。");
+ const output={};
+ for(const kind of ['stage','monster','runner','mission']){
+  const section=value[kind];
+  if(!section||typeof section.brief!=="string"||section.brief.length>3000||!Array.isArray(section.images)||section.images.length>6)fail("各資料は画像6枚・制作条件3000文字以内にしてください。");
+  output[kind]={brief:section.brief.trim(),images:section.images.map(img=>{
+   if(!img||typeof img!=="object")fail("画像を確認してください。");
+   if(!img.data)fail("画像を選択してください。");
+   validateImages({stage_image:img.data});
+   if(!['雰囲気','全体図','外観','内装','動線','正面','側面','背面','細部'].includes(img.view))fail("画像の用途を選んでください。");
+   if(typeof img.note!=="string"||img.note.length>1000||typeof img.source!=="string"||img.source.length>2000)fail("画像の説明が長すぎます。");
+   const source=img.source.trim();
+   if(source&&!/^https?:\/\//i.test(source))fail("出典URLはhttpまたはhttpsで入力してください。");
+   if(source){try{new URL(source);}catch{fail("出典URLを確認してください。");}}
+   return {data:img.data,view:img.view,note:img.note.trim(),source};
+  })};
+ }
+ return output;
+}
 async function bodyOf(request) {
  if(!request.headers.get("content-type")?.includes("application/json"))fail("JSON形式で送信してください。",415);
- const text=await request.text();if(text.length>(new URL(request.url).pathname.startsWith("/api/ideas")?750000:16000))fail("入力が大きすぎます。",413);
+ const text=await request.text();if(text.length>(new URL(request.url).pathname.startsWith("/api/ideas")?4500000:16000))fail("入力が大きすぎます。",413);
  try{return JSON.parse(text)}catch{fail("入力を読み取れませんでした。");}
 }
 async function setting(env) {return env.DB.prepare("SELECT * FROM settings WHERE id=1").first();}
@@ -110,19 +131,25 @@ async function api(request,env,path) {
  if(imageId&&request.method==="GET"){
   const images=await env.DB.prepare("SELECT stage_image,monster_image,runner_image,mission_image FROM ideas WHERE id=?").bind(imageId).first();
   if(!images)fail("企画が見つかりません。",404);
-  return response({images});
+  const refs=await env.DB.prepare("SELECT kind,content FROM idea_references WHERE idea_id=?").bind(imageId).all();
+  return response({images,references:Object.fromEntries(refs.results.map(r=>[r.kind,JSON.parse(r.content)]))});
  }
  const id=path.match(/^\/api\/ideas\/([a-f0-9-]{36})$/)?.[1];
  if((path==="/api/ideas"&&request.method==="POST")||(id&&request.method==="PUT")){
 
   const body=await bodyOf(request),item=validateIdea(body),extras={...validateImages(body),...(item.runner!==undefined?{runner:item.runner}:{})},now=new Date().toISOString();
+  const references=validateReferences(body.references);
   const extraKeys=Object.keys(extras),extraValues=Object.values(extras);
 
   const vals=[item.title,item.author,item.theme,item.stage,item.monster,item.mission,item.victory,item.highlight,item.status];
-  if(id){
-   const result=await env.DB.prepare(`UPDATE ideas SET title=?,author=?,theme=?,stage=?,monster=?,mission=?,victory=?,highlight=?,status=?,updated=?${extraKeys.map(k=>","+k+"=?").join("")} WHERE id=?`).bind(...vals,now,...extraValues,id).run();
-   if(!result.meta.changes)fail("企画が見つかりません。",404);
-  } else await env.DB.prepare(`INSERT INTO ideas (id,title,author,theme,stage,monster,mission,victory,highlight,status,created,updated${extraKeys.map(k=>","+k).join("")}) VALUES (${Array(12+extraKeys.length).fill("?").join(",")})`).bind(crypto.randomUUID(),...vals,now,now,...extraValues).run();
+  const ideaId=id||crypto.randomUUID();
+  const statement=id?env.DB.prepare(`UPDATE ideas SET title=?,author=?,theme=?,stage=?,monster=?,mission=?,victory=?,highlight=?,status=?,updated=?${extraKeys.map(k=>","+k+"=?").join("")} WHERE id=?`).bind(...vals,now,...extraValues,id):env.DB.prepare(`INSERT INTO ideas (id,title,author,theme,stage,monster,mission,victory,highlight,status,created,updated${extraKeys.map(k=>","+k).join("")}) VALUES (${Array(12+extraKeys.length).fill("?").join(",")})`).bind(ideaId,...vals,now,now,...extraValues);
+  if(references){
+   if(id&&!await env.DB.prepare("SELECT id FROM ideas WHERE id=?").bind(id).first())fail("企画が見つかりません。",404);
+   await env.DB.batch([statement,...Object.entries(references).map(([kind,content])=>env.DB.prepare("INSERT INTO idea_references (idea_id,kind,content) VALUES (?,?,?) ON CONFLICT(idea_id,kind) DO UPDATE SET content=excluded.content").bind(ideaId,kind,JSON.stringify(content)))]);
+  }else{
+   const result=await statement.run();if(id&&!result.meta.changes)fail("企画が見つかりません。",404);
+  }
   return response({ok:true},id?200:201);
  }
  if(id&&request.method==="DELETE"){
