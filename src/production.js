@@ -11,13 +11,17 @@ export async function productionRoute(request,env,path,bodyOf){
  if(request.method==='PUT'){
   const b=await bodyOf(request);
   if(!Number.isSafeInteger(b.version)||b.version!==(current?.version||0))fail('制作情報が更新されています。読み直してください。',409);
-  if(!['start','claim','complete','fail','cancel'].includes(b.action))fail('操作を確認してください。');
+  if(!['start','restart','claim','complete','fail','cancel'].includes(b.action))fail('操作を確認してください。');
   let stage=current?.stage||stages[0],state=current?.state,outputs=current?.outputs||'{}',ref=current?.dispatch_ref||'',note=b.note||'';
   if(typeof note!=='string'||note.length>2000)fail('メモは2000文字以内にしてください。');
   if(b.action==='start'){
    if(current)fail('この企画には制作記録があります。停止した制作の再開は担当者へ相談してください。',409);
    if(idea.status!=='検討中')fail('制作する企画を「検討中」にしてから開始してください。');
    state='待機';note='制作開始を受付。台本AIへの受け渡し待ち。';
+  }else if(b.action==='restart'){
+   if(!current||current.state!=='停止')fail('停止済みの制作だけを再開できます。',409);
+   if(!note.trim())fail('再開理由を記入してください。');
+   stage=stages[0];state='待機';outputs='{}';ref='';
   }else{
    if(!current)fail('制作を開始してください。',409);
    if(['確認待ち','停止'].includes(current.state))fail('この制作は終了または停止しています。',409);
@@ -42,7 +46,7 @@ export async function productionRoute(request,env,path,bodyOf){
   }else{
    // Conditional write prevents stale completions and double dispatch, including concurrent requests.
    try{
-    const r=await env.DB.prepare('UPDATE production SET version=version+1,stage=?,state=?,outputs=?,note=?,dispatch_ref=?,updated=? WHERE idea_id=? AND version=? AND EXISTS(SELECT 1 FROM ideas WHERE id=? AND updated=?)').bind(stage,state,outputs,note,ref,now,id,b.version,id,idea.updated).run();
+    const r=await env.DB.prepare('UPDATE production SET version=version+1,stage=?,state=?,outputs=?,note=?,dispatch_ref=?,updated=?,input_updated=? WHERE idea_id=? AND version=? AND EXISTS(SELECT 1 FROM ideas WHERE id=? AND updated=?)').bind(stage,state,outputs,note,ref,now,b.action==='restart'?idea.updated:current.input_updated,id,b.version,id,idea.updated).run();
     if(!r.meta.changes)fail('制作情報または企画が更新されています。読み直してください。',409);
    }catch(e){if(String(e.message).includes('UNIQUE'))fail('別の制作が実行中です。',409);throw e;}
   }

@@ -24,5 +24,8 @@ test('制作キューの重複防止、順序、成果物、停止、古い企�
  assert.equal((await call(q,'PUT',{action:'complete',version:2,output:{text:'古い成果物',location:'',verified:true}})).status,409);
  assert.equal((await call(q,'PUT',{action:'cancel',version:2,note:'内容変更のため'})).status,200);
  assert.equal((await call(q,'PUT',{action:'complete',version:3,output:{text:'完了',location:'',verified:true}})).status,409);
+ assert.equal((await call(q,'PUT',{action:'restart',version:3,note:'正しい担当で再開'})).status,200);
+ const resumed=(await(await call(q)).json()).current;assert.equal(resumed.stage,'台本AI');assert.equal(resumed.input_updated,'new-revision');assert.equal(resumed.outputs,'{}');
+ assert.equal((await call(q,'PUT',{action:'restart',version:4,note:'二重'})).status,409);
  await call('/ideas/'+second.id,'DELETE');assert.equal(db.prepare('SELECT COUNT(*) n FROM production_history WHERE idea_id=?').get(second.id).n,0);db.close();
 });
