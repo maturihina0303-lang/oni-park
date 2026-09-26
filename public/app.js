@@ -28,7 +28,7 @@ async function refresh(){
 const statusClass = s => ({"アイデア":"idea","検討中":"review","確認待ち":"production","マップ制作中":"map","モデル制作中":"model","撮影済み":"done"}[s]||"idea");
 function render(){
  const q=$("#search").value.toLocaleLowerCase(),status=activeStatus,theme=$("#theme").value;
- const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.mission,x.victory,x.highlight].join(" ").toLocaleLowerCase().includes(q));
+ const filtered=items.filter(x=>(!status||x.status===status)&&(!theme||genreOf(x.theme)===theme)&&[x.title,x.author,x.theme,x.stage,x.monster,x.runner,x.mission,x.victory,x.highlight].join(" ").toLocaleLowerCase().includes(q));
  $("#count").textContent=filtered.length+" 件";
  $("#empty").hidden=filtered.length!==0;
  $("#empty h2").textContent=items.length?"条件に合う企画がありません":"ここから、企画を育てよう。";
@@ -37,7 +37,7 @@ function render(){
 }
 async function showDetail(id){
  selected=items.find(x=>x.id===id);if(!selected)return;
- $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(genreOf(selected.theme))+'</p>'+[["stage","【マップ】"],["monster","【鬼】"],["mission","【隠しアイテム】"],["victory","【最終目的】"],["highlight","【制作メモ】"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>'+(['stage','monster','mission'].includes(k)?'<div data-detail-image="'+k+'_image"></div>':'')).join("");
+ $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(genreOf(selected.theme))+'</p>'+[["stage","【マップ】"],["monster","【鬼】"],["runner","【逃げ側】"],["mission","【隠しアイテム】"],["victory","【最終目的】"],["highlight","【制作メモ】"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>'+(['stage','monster','runner','mission'].includes(k)?'<div data-detail-image="'+k+'_image"></div>':'')).join("");
  $("#detail-actions").hidden=false;$("#detail").showModal();
  try{
   const {images}=await api("/ideas/"+id+"/images");
@@ -101,7 +101,7 @@ $("#status-filters").onclick=e=>{const button=e.target.closest("[data-status]");
 for(const id of ["search","theme"])$("#"+id).addEventListener(id==="search"?"input":"change",render);
 enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
 
-const imageLabels={stage_image:"マップ",monster_image:"鬼",mission_image:"アイテム"};
+const imageLabels={stage_image:"マップ",monster_image:"鬼",runner_image:"逃げ側",mission_image:"アイテム"};
 let imageState={};
 function resetImages(images){
  for(const field of document.querySelectorAll('[data-image-field]')){
