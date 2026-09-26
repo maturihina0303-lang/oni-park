@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync,readdirSync} from 'node:fs';
+import worker,{digest,validateImages} from '../src/worker.js';
+const picture='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=';
+test('画像の形式とサイズを検証',()=>{
+ assert.equal(validateImages({stage_image:picture}).stage_image,picture);
+ assert.deepEqual(validateImages({}),{});
+ for(const bad of ['https://example.com/a.png','data:image/svg+xml;base64,AAAA',5,'data:image/png;base64,'+'a'.repeat(180000)])assert.throws(()=>validateImages({stage_image:bad}));
+});
+test('画像3種の保存・再読込・差し替え・削除と既存投稿の互換性',async()=>{
+ const db=new DatabaseSync(':memory:');
+ for(const file of readdirSync(new URL('../migrations/',import.meta.url)).filter(x=>x.endsWith('.sql')).sort())db.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
+ db.prepare('INSERT INTO settings VALUES(1,?,?,?)').run('h','s','v');
+ const token='a'.repeat(64);db.prepare('INSERT INTO sessions VALUES(?,?,?,?)').run(await digest(token),'member','v',Date.now()+60000);
+ const env={ALLOWED_ORIGIN:'https://example.com',DB:{prepare(sql){const statement=db.prepare(sql);return {args:[],bind(...args){this.args=args;return this;},async first(){return statement.get(...this.args)||null;},async all(){return {results:statement.all(...this.args)};},async run(){return {meta:statement.run(...this.args)};}};}}};
+ const call=(path,method='GET',body,auth=true)=>worker.fetch(new Request('https://api.example/api'+path,{method,headers:{Origin:env.ALLOWED_ORIGIN,'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined}),env);
+ const note={title:'画像テスト',author:'テスト',theme:'その他',stage:'街',monster:'鬼1人',mission:'6つ',victory:'脱出',highlight:'',status:'アイデア'};
+ assert.equal((await call('/ideas','POST',{...note,stage_image:picture,monster_image:picture,mission_image:picture})).status,201);
+ const list=await (await call('/ideas')).json(),id=list.items[0].id,path='/ideas/'+id;
+ assert.equal(list.items[0].stage_image,undefined);
+ assert.equal((await call(path+'/images','GET',undefined,false)).status,401);
+ assert.equal((await (await call(path+'/images')).json()).images.stage_image,picture);
+ assert.equal((await call(path,'PUT',{...note,title:'本文だけ変更'})).status,200);
+ assert.equal((await (await call(path+'/images')).json()).images.monster_image,picture);
+ assert.equal((await call(path,'PUT',{...note,stage_image:'',mission_image:picture.replace('image/png','image/webp')})).status,200);
+ const images=(await (await call(path+'/images')).json()).images;
+ assert.equal(images.stage_image,'');assert.equal(images.monster_image,picture);assert.ok(images.mission_image.startsWith('data:image/webp'));
+ assert.equal((await call(path,'PUT',{...note,monster_image:'bad'})).status,400);
+ assert.equal((await (await call(path+'/images')).json()).images.monster_image,picture);
+ assert.equal((await call(path,'DELETE')).status,200);assert.equal((await call(path+'/images')).status,404);
+ assert.equal((await call('/ideas','POST',note)).status,201);
+ db.close();
+});

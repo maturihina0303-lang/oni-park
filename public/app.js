@@ -35,12 +35,24 @@ function render(){
  $("#empty p").textContent=items.length?"キーワードや絞り込みを変えてみてください。":"「企画を投稿」から自分の案や、提案してもらった案を残せます。";
  $("#cards").innerHTML=filtered.map(x=>'<article class="note-card status-'+statusClass(x.status)+'"><div class="note-top"><span class="tag">'+esc(x.status)+'</span><span class="note-theme">'+esc(genreOf(x.theme))+'</span></div><button class="note-open" data-id="'+x.id+'"><h3>'+esc(x.title)+'</h3><span class="note-label">【最終目的】</span><p>'+esc(x.victory)+'</p></button><div class="note-meta"><span>'+esc(x.author)+'</span><span>'+new Date(x.updated).toLocaleDateString("ja-JP")+'</span></div><div class="note-actions"><button data-id="'+x.id+'">詳細を見る</button><button data-id="'+x.id+'" data-action="edit">編集</button><button data-id="'+x.id+'" data-action="delete" class="danger">削除</button></div></article>').join("");
 }
-function showDetail(id){
+async function showDetail(id){
  selected=items.find(x=>x.id===id);if(!selected)return;
- $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(genreOf(selected.theme))+'</p>'+[["stage","【マップ】"],["monster","【鬼】"],["mission","【隠しアイテム】"],["victory","【最終目的】"],["highlight","【制作メモ】"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>').join("");
+ $("#detail-content").innerHTML='<h2>'+esc(selected.title)+'</h2><span class="tag status-'+statusClass(selected.status)+'">'+esc(selected.status)+'</span><p class="muted">'+esc(selected.author)+' ・ '+esc(genreOf(selected.theme))+'</p>'+[["stage","【マップ】"],["monster","【鬼】"],["mission","【隠しアイテム】"],["victory","【最終目的】"],["highlight","【制作メモ】"]].map(([k,t])=>'<h3>'+t+'</h3><p>'+esc(selected[k]||"未記入")+'</p>'+(['stage','monster','mission'].includes(k)?'<div data-detail-image="'+k+'_image"></div>':'')).join("");
  $("#detail-actions").hidden=false;$("#detail").showModal();
+ try{
+  const {images}=await api("/ideas/"+id+"/images");
+  if(selected?.id!==id)return;
+  for(const [key,value] of Object.entries(images)){
+   const slot=document.querySelector('[data-detail-image="'+key+'"]');
+   if(slot&&value){const img=document.createElement("img");img.className="reference-image";img.alt=imageLabels[key]+"のイメージ画像";img.src=value;slot.replaceChildren(img);}
+  }
+ }catch(e){notice("画像を読み込めませんでした。"+e.message);}
+
 }
-function openEditor(item=null){
+async function openEditor(item=null){
+ let images={};
+ try{if(item)images=(await api("/ideas/"+item.id+"/images")).images;}catch(e){notice(e.message);return;}
+ resetImages(images);
  editing=item?.id||null;$("#idea-form").reset();$("#editor-error").textContent="";
  $("#editor-title").textContent=item?"企画を編集":"新しい企画";
  $("#edit-status").hidden=false;
@@ -68,7 +80,7 @@ handleForm("#login","#login-error",async()=>{
  const auth=await api("/login","POST",{role:ownerMode?"owner":"member",password:$("#password").value});token=auth.token;sessionStorage.setItem("oni-park-session",token);$("#password").value="";await enter();
 });
 handleForm("#idea-form","#editor-error",async data=>{
- await api(editing?"/ideas/"+editing:"/ideas",editing?"PUT":"POST",Object.fromEntries(data));
+ await api(editing?"/ideas/"+editing:"/ideas",editing?"PUT":"POST",{...Object.fromEntries(data),...await collectImages()});
  $("#editor").close();await refresh();notice("企画を保存しました。");
 });
 handleForm("#pass-form","#owner-error",async data=>{
@@ -88,3 +100,50 @@ document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getE
 $("#status-filters").onclick=e=>{const button=e.target.closest("[data-status]");if(!button)return;activeStatus=button.dataset.status;document.querySelectorAll("[data-status]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));render();};
 for(const id of ["search","theme"])$("#"+id).addEventListener(id==="search"?"input":"change",render);
 enter().catch(e=>{locked();if(!e.message.includes("合言葉を入力"))$("#login-error").textContent=e.message;});
+
+const imageLabels={stage_image:"マップ",monster_image:"鬼",mission_image:"アイテム"};
+let imageState={};
+function resetImages(images){
+ for(const field of document.querySelectorAll('[data-image-field]')){
+  const key=field.dataset.imageField;
+  if(imageState[key]?.url)URL.revokeObjectURL(imageState[key].url);
+  imageState[key]={value:images[key]||""};
+  renderImage(field);
+ }
+}
+function renderImage(field){
+ const state=imageState[field.dataset.imageField],img=field.querySelector('img');
+ const src=state.url||state.value;
+ img.hidden=!src;field.querySelector('.image-remove').hidden=!src;
+ if(src)img.src=src;else img.removeAttribute('src');
+}
+for(const field of document.querySelectorAll('[data-image-field]')){
+ const key=field.dataset.imageField,input=field.querySelector('input');
+ input.onchange=()=>{
+  const file=input.files[0];if(!file)return;
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>20*1024*1024){notice("20MB以下のPNG・JPEG・WebP画像を選んでください。");input.value="";return;}
+  if(imageState[key]?.url)URL.revokeObjectURL(imageState[key].url);
+  imageState[key]={file,url:URL.createObjectURL(file)};renderImage(field);
+ };
+ field.querySelector('.image-remove').onclick=()=>{
+  if(imageState[key]?.url)URL.revokeObjectURL(imageState[key].url);
+  imageState[key]={value:""};input.value="";renderImage(field);
+ };
+}
+async function collectImages(){
+ const result={};
+ for(const [key,state] of Object.entries(imageState)){
+  if(!state.file){result[key]=state.value;continue;}
+  const img=new Image();img.src=state.url;
+  try{await img.decode();}catch{throw new Error(imageLabels[key]+"の画像を読み取れません。別の画像を選んでください。");}
+  const canvas=document.createElement('canvas');
+  for(let size=1200;size>=300;size=Math.floor(size*.75)){
+   const scale=Math.min(1,size/Math.max(img.naturalWidth,img.naturalHeight));
+   canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+   const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+   result[key]=canvas.toDataURL('image/jpeg',.8);if(result[key].length<=180000)break;
+  }
+  if(result[key].length>180000)throw new Error(imageLabels[key]+"の画像を小さくして選び直してください。");
+ }
+ return result;
+}

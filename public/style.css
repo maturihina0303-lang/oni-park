@@ -62,3 +62,5 @@ dialog .dialog-head button{flex-shrink:0;min-width:44px;min-height:44px;display:
 .status-map{--status-bg:#d9f2f2;--status-ink:#23666a;--status-line:#6eb9bb}
 .status-model{--status-bg:#ffe6cf;--status-ink:#884c19;--status-line:#daa36e}
 
+
+.image-field{border:1px dashed var(--line);border-radius:12px;padding:14px;margin:0 0 22px;background:#fff}.image-field label{margin:0}.image-field input{font-size:13px;max-width:100%;padding:8px}.image-field img,.reference-image{display:block;max-width:100%;height:auto;max-height:500px;object-fit:contain;border-radius:10px;margin:12px auto}.image-field img{max-height:240px}.image-field .muted{margin:6px 0}.image-remove{font-size:13px}

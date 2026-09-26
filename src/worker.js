@@ -23,9 +23,19 @@ export function validateIdea(body) {
  if(!statuses.includes(body.status))fail("進捗を選択してください。");
  item.status=body.status; return item;
 }
+export function validateImages(body) {
+ const images={};
+ for(const key of ['stage_image','monster_image','mission_image']) {
+  if(body[key]===undefined)continue;
+  const value=body[key];
+  if(typeof value!=="string" || value.length>180000 || (value && !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)))fail("画像を選び直してください。画像が大きすぎるか、形式が対応していません。");
+  images[key]=value;
+ }
+ return images;
+}
 async function bodyOf(request) {
  if(!request.headers.get("content-type")?.includes("application/json"))fail("JSON形式で送信してください。",415);
- const text=await request.text();if(text.length>16000)fail("入力が大きすぎます。",413);
+ const text=await request.text();if(text.length>(new URL(request.url).pathname.startsWith("/api/ideas")?560000:16000))fail("入力が大きすぎます。",413);
  try{return JSON.parse(text)}catch{fail("入力を読み取れませんでした。");}
 }
 async function setting(env) {return env.DB.prepare("SELECT * FROM settings WHERE id=1").first();}
@@ -89,19 +99,26 @@ async function api(request,env,path) {
   return response({ok:true});
  }
  if(path==="/api/ideas"&&request.method==="GET"){
-  const result=await env.DB.prepare("SELECT * FROM ideas ORDER BY updated DESC").all();
+  const result=await env.DB.prepare("SELECT id,title,author,theme,stage,monster,mission,victory,highlight,status,created,updated FROM ideas ORDER BY updated DESC").all();
   return response({items:result.results});
+ }
+ const imageId=path.match(/^\/api\/ideas\/([a-f0-9-]{36})\/images$/)?.[1];
+ if(imageId&&request.method==="GET"){
+  const images=await env.DB.prepare("SELECT stage_image,monster_image,mission_image FROM ideas WHERE id=?").bind(imageId).first();
+  if(!images)fail("企画が見つかりません。",404);
+  return response({images});
  }
  const id=path.match(/^\/api\/ideas\/([a-f0-9-]{36})$/)?.[1];
  if((path==="/api/ideas"&&request.method==="POST")||(id&&request.method==="PUT")){
 
-  const item=validateIdea(await bodyOf(request)),now=new Date().toISOString();
+  const body=await bodyOf(request),item=validateIdea(body),images=validateImages(body),now=new Date().toISOString();
+  const imageKeys=Object.keys(images),imageValues=Object.values(images);
 
   const vals=[item.title,item.author,item.theme,item.stage,item.monster,item.mission,item.victory,item.highlight,item.status];
   if(id){
-   const result=await env.DB.prepare("UPDATE ideas SET title=?,author=?,theme=?,stage=?,monster=?,mission=?,victory=?,highlight=?,status=?,updated=? WHERE id=?").bind(...vals,now,id).run();
+   const result=await env.DB.prepare(`UPDATE ideas SET title=?,author=?,theme=?,stage=?,monster=?,mission=?,victory=?,highlight=?,status=?,updated=?${imageKeys.map(k=>","+k+"=?").join("")} WHERE id=?`).bind(...vals,now,...imageValues,id).run();
    if(!result.meta.changes)fail("企画が見つかりません。",404);
-  } else await env.DB.prepare("INSERT INTO ideas VALUES(?,?,?,?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),...vals,now,now).run();
+  } else await env.DB.prepare(`INSERT INTO ideas (id,title,author,theme,stage,monster,mission,victory,highlight,status,created,updated${imageKeys.map(k=>","+k).join("")}) VALUES (${Array(12+imageKeys.length).fill("?").join(",")})`).bind(crypto.randomUUID(),...vals,now,now,...imageValues).run();
   return response({ok:true},id?200:201);
  }
  if(id&&request.method==="DELETE"){
